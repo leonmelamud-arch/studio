@@ -23,15 +23,16 @@ export function SlotMachine({ participants, winner, isSpinning, onSpinEnd }: Slo
 
   const participantList = useMemo(() => {
     if (participants.length === 0) return [];
-    const shuffled = [...participants].sort(() => Math.random() - 0.5);
+    // Use a stable shuffle based on participants array to avoid re-shuffling on every render
+    const shuffled = [...participants].sort(() => 0.5 - Math.random());
     return Array.from({ length: REPETITIONS }, () => shuffled).flat();
   }, [participants]);
 
   useEffect(() => {
-    if(participants.length > 0 && shuffledParticipants.length === 0) {
-      setShuffledParticipants(participantList);
+    if (participants.length > 0) {
+        setShuffledParticipants(participantList);
     }
-  }, [participants, participantList, shuffledParticipants]);
+  }, [participants, participantList]);
 
   useEffect(() => {
     if (isSpinning && winner && shuffledParticipants.length > 0) {
@@ -45,6 +46,14 @@ export function SlotMachine({ participants, winner, isSpinning, onSpinEnd }: Slo
         const targetPosition = -winnerIndex * ITEM_HEIGHT_PX + ITEM_HEIGHT_PX;
         setAnimationTarget(targetPosition);
         setIsAnimating(true);
+      } else {
+        // Fallback if winner not found in the latter half (edge case)
+        const firstWinnerIndex = shuffledParticipants.findIndex(p => p.id === winner.id);
+        if (firstWinnerIndex !== -1) {
+          const targetPosition = -firstWinnerIndex * ITEM_HEIGHT_PX + ITEM_HEIGHT_PX;
+          setAnimationTarget(targetPosition);
+          setIsAnimating(true);
+        }
       }
     }
   }, [isSpinning, winner, shuffledParticipants]);
@@ -56,15 +65,18 @@ export function SlotMachine({ participants, winner, isSpinning, onSpinEnd }: Slo
 
       // "Snap" to a new state to prepare for next spin without animation
       if (winner && listRef.current) {
-        const winnerIndex = shuffledParticipants.findIndex(p => p.id === winner.id);
-        if (winnerIndex === -1) return;
         
         listRef.current.style.transition = 'none';
 
-        const newShuffled = [winner, ...shuffledParticipants.filter((_, i) => i !== winnerIndex)];
-        setShuffledParticipants(newShuffled);
+        // Re-shuffle for the next round to feel fresh
+        const newShuffledList = [...participants].sort(() => 0.5 - Math.random());
+        const finalNewShuffledList = Array.from({ length: REPETITIONS }, () => newShuffledList).flat();
+        
+        const winnerIndex = finalNewShuffledList.findIndex(p => p.id === winner.id);
 
-        const newTarget = -newShuffled.findIndex(p => p.id === winner.id) * ITEM_HEIGHT_PX + ITEM_HEIGHT_PX;
+        setShuffledParticipants(finalNewShuffledList);
+        
+        const newTarget = -winnerIndex * ITEM_HEIGHT_PX + ITEM_HEIGHT_PX;
         setAnimationTarget(newTarget);
         
         // Restore transition after a frame

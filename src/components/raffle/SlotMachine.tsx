@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
@@ -17,7 +18,6 @@ const ITEM_HEIGHT_PX = ITEM_HEIGHT_REM * 16; // 80px
 
 export function SlotMachine({ participants, winner, isSpinning, onSpinEnd }: SlotMachineProps) {
   const [shuffledParticipants, setShuffledParticipants] = useState<Participant[]>([]);
-  const [animationTarget, setAnimationTarget] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
   const listRef = useRef<HTMLUListElement>(null);
 
@@ -91,6 +91,7 @@ export function SlotMachine({ participants, winner, isSpinning, onSpinEnd }: Slo
       <ul
         ref={listRef}
         onTransitionEnd={handleTransitionEnd}
+        className="h-full"
       >
         {hasParticipants ? (
           shuffledParticipants.map((p, i) => (
@@ -103,7 +104,7 @@ export function SlotMachine({ participants, winner, isSpinning, onSpinEnd }: Slo
             </li>
           ))
         ) : (
-          <li className="h-full flex items-center justify-center text-card-foreground/50 text-xl">
+          <li className="h-full flex items-center justify-center text-black text-xl">
             Add participants to begin
           </li>
         )}
@@ -111,3 +112,4 @@ export function SlotMachine({ participants, winner, isSpinning, onSpinEnd }: Slo
     </div>
   );
 }
+

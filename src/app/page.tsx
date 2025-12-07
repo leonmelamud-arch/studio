@@ -12,7 +12,7 @@ import { useParticipants } from '@/context/ParticipantsContext';
 import { Confetti } from '@/components/raffle/Confetti';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import Image from 'next/image';
-import { collection, writeBatch, doc } from 'firebase/firestore';
+import { collection, writeBatch, doc, getDocs, query, where } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 
 const initialLogo = PlaceHolderImages.find(img => img.id === 'mcp-logo');
@@ -36,15 +36,23 @@ export default function Home() {
     }
 
     const participantsCol = collection(firestore, 'participants');
-    const uniqueNew = newParticipants.filter(np => !allParticipants.some(ap => ap.id === np.id));
+    
+    // We check for existing participants based on displayName to avoid duplicates from CSV
+    const existingSnapshot = await getDocs(participantsCol);
+    const existingDisplayNames = new Set(existingSnapshot.docs.map(doc => doc.data().displayName));
+
+    const uniqueNew = newParticipants.filter(p => !existingDisplayNames.has(p.displayName));
 
     if (uniqueNew.length > 0) {
       try {
         const batch = writeBatch(firestore);
         uniqueNew.forEach(participant => {
-            const {id, ...data} = participant;
-            const docRef = doc(participantsCol, id);
-            batch.set(docRef, data);
+            const docRef = doc(participantsCol, participant.id);
+            batch.set(docRef, {
+              name: participant.name,
+              lastName: participant.lastName,
+              displayName: participant.displayName,
+            });
         });
         await batch.commit();
 
@@ -97,7 +105,7 @@ export default function Home() {
     if (availableParticipants.length === 0) {
       toast({
         title: "Raffle is empty!",
-        description: "Please add participants before starting.",
+        description: "Please add participants or reset the raffle.",
         variant: "destructive"
       });
       return;
@@ -126,6 +134,17 @@ export default function Home() {
     setIsRainingLogos(true);
     setTimeout(() => setIsRainingLogos(false), 5000); // Stop the rain after 5 seconds
   };
+  
+  const handleResetRaffle = () => {
+    setAvailableParticipants(allParticipants);
+    setWinner(null);
+    setIsRaffling(false);
+    setSpinHasEnded(false);
+    toast({
+      title: 'Raffle Reset',
+      description: 'All participants are now available for the next round.',
+    });
+  }
 
   const participantCount = useMemo(() => allParticipants.length, [allParticipants]);
   const availableCount = useMemo(() => availableParticipants.length, [availableParticipants]);
@@ -173,7 +192,7 @@ export default function Home() {
             loading={loading && allParticipants.length === 0}
           />
           <div className="flex flex-wrap gap-4 items-center justify-center">
-             {!spinHasEnded ? (
+             {!isRaffling && !spinHasEnded ? (
                 <Button 
                 onClick={handleStartRaffle} 
                 disabled={isRaffling || loading || availableParticipants.length === 0}
@@ -184,16 +203,23 @@ export default function Home() {
                 <Trophy className="mr-2 h-5 w-5" />
                 {loading ? 'Loading...' : 'Start Raffle'}
               </Button>
-             ) : (
+             ) : spinHasEnded ? (
               <Button onClick={handleNextRound} size="lg" className="font-bold text-lg">
                 Prepare Next Round
               </Button>
-             )}
+             ) : null}
+            
+            {availableCount === 0 && participantCount > 0 && (
+                <Button onClick={handleResetRaffle} size="lg" variant="secondary">
+                    Reset Raffle
+                </Button>
+            )}
+
           </div>
         </div>
 
         <footer className="text-center text-foreground/80 mt-8">
-          <p>Participants: {participantCount} | Available for this round: {availableCount}</p>
+          <p>Total Participants: {participantCount} | Available this round: {availableCount}</p>
         </footer>
       </main>
     </>

@@ -1,9 +1,9 @@
 "use client";
 
-import React, { createContext, useContext, useState, ReactNode, Dispatch, SetStateAction, useEffect } from 'react';
+import React, { createContext, useContext, useState, ReactNode, Dispatch, SetStateAction, useEffect, useMemo } from 'react';
 import type { Participant } from '@/types';
 import { useCollection } from '@/firebase';
-import { collection } from 'firebase/firestore';
+import { collection, query } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 
 interface ParticipantsContextType {
@@ -18,32 +18,38 @@ const ParticipantsContext = createContext<ParticipantsContextType | undefined>(u
 
 export function ParticipantsProvider({ children }: { children: ReactNode }) {
   const firestore = useFirestore();
-  const participantsCollection = firestore ? collection(firestore, 'participants') : null;
-  const { data: firestoreParticipants, loading } = useCollection<Participant>(participantsCollection);
+
+  const participantsQuery = useMemo(() => {
+    if (!firestore) return null;
+    return query(collection(firestore, 'participants'));
+  }, [firestore]);
+
+  const { data: firestoreParticipants, loading } = useCollection<Participant>(participantsQuery);
 
   const [allParticipants, setAllParticipants] = useState<Participant[]>([]);
   const [availableParticipants, setAvailableParticipants] = useState<Participant[]>([]);
   
   useEffect(() => {
     if (firestoreParticipants) {
-        setAllParticipants(firestoreParticipants);
-        // This logic ensures that newly added participants are available for the raffle
-        // without resetting the 'available' list during a winner selection process.
-        const currentIds = new Set(allParticipants.map(p => p.id));
-        const newParticipants = firestoreParticipants.filter(p => !currentIds.has(p.id));
-        
-        if (newParticipants.length > 0) {
-            setAvailableParticipants(prev => [...prev, ...newParticipants]);
-        }
+        const sortedParticipants = [...firestoreParticipants].sort((a, b) => a.displayName.localeCompare(b.displayName));
+        setAllParticipants(sortedParticipants);
     }
   }, [firestoreParticipants]);
 
   // Effect to reset available participants when all participants are drawn
+  // or to initialize it for the first time.
   useEffect(() => {
-    if(availableParticipants.length === 0 && allParticipants.length > 0) {
+    if (allParticipants.length > 0) {
+      const availableIds = new Set(availableParticipants.map(p => p.id));
+      const newParticipants = allParticipants.filter(p => !availableIds.has(p.id));
+
+      if (newParticipants.length > 0) {
+         setAvailableParticipants(prev => [...prev, ...newParticipants].sort((a,b) => a.displayName.localeCompare(b.displayName)));
+      } else if (availableParticipants.length === 0) {
         setAvailableParticipants(allParticipants);
+      }
     }
-  }, [availableParticipants, allParticipants]);
+  }, [allParticipants]);
 
 
   return (

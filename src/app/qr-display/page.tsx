@@ -6,10 +6,11 @@ import QRCode from "react-qr-code";
 import { Header } from "@/components/layout/Header";
 import { useParticipants } from "@/context/ParticipantsContext";
 import { useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/button';
 
 export default function QRDisplayPage() {
     const [url, setUrl] = useState('');
-    const { setAllParticipants, setAvailableParticipants } = useParticipants();
+    const { setAllParticipants, setAvailableParticipants, allParticipants } = useParticipants();
     const router = useRouter();
 
 
@@ -29,16 +30,18 @@ export default function QRDisplayPage() {
         }
     };
 
-    const allParticipants = useParticipants().allParticipants;
 
     return (
-        <main className="flex flex-col items-center min-h-screen w-full p-4 md:p-8">
+        <main className="flex flex-col items-center min-h-screen w-full p-4 md:p-8 relative">
             <Header onParticipantsLoad={handleParticipantsLoad} isRaffling={false}>
-                <button onClick={() => router.push('/')} className="text-lg font-bold py-2 px-4 rounded">
+                <Button onClick={() => router.push('/')} variant="outline" className="font-bold">
                     Back to Raffle
-                </button>
+                </Button>
             </Header>
             <div className="flex-grow flex flex-col items-center justify-center w-full text-center">
+                <h1 className="text-4xl md:text-5xl font-bold tracking-tighter text-primary font-headline mb-4">
+                    HypnoRaffle
+                </h1>
                 <h2 className="text-3xl font-bold text-card-foreground mb-4">Scan to Join the Raffle!</h2>
                 <p className="text-muted-foreground mb-8">
                     Scan the QR code below with your phone to enter your name.

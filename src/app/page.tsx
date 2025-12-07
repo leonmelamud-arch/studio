@@ -108,23 +108,23 @@ export default function Home() {
   return (
     <>
       <Confetti isCelebrating={spinHasEnded || isRainingLogos} image={isRainingLogos ? logoUrl : undefined} />
-      <main className="flex flex-col items-center justify-between min-h-screen w-full p-4 md:p-8">
+      <main className="flex flex-col items-center justify-start min-h-screen w-full p-4 md:p-8 pt-24 md:pt-32 relative">
         <Header 
           onParticipantsLoad={handleParticipantsLoad} 
           isRaffling={isRaffling} 
           onLogoRain={handleLogoRain}
         />
         
-        <div className="w-full max-w-4xl mx-auto flex-grow flex flex-col items-center justify-center gap-8">
+        <div className="w-full max-w-lg mx-auto flex-grow flex flex-col items-center justify-start gap-8">
             
           {logoUrl && (
-            <button onClick={handleLogoClick} className="cursor-pointer group relative mb-8">
+            <button onClick={handleLogoClick} className="cursor-pointer group relative mb-4">
                 <Image
                   src={logoUrl}
                   alt={initialLogo?.description || "Raffle Logo"}
-                  width={160}
-                  height={160}
-                  className="rounded-full shadow-lg border-4 border-primary/50 group-hover:opacity-80 transition-opacity"
+                  width={240}
+                  height={240}
+                  className="rounded-full aspect-square object-cover shadow-lg border-4 border-primary/50 group-hover:opacity-80 transition-opacity"
                   data-ai-hint={initialLogo?.imageHint}
                 />
                  <div className="absolute inset-0 bg-black/60 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">

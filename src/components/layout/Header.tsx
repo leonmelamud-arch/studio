@@ -16,7 +16,7 @@ import {
 interface HeaderProps {
   onParticipantsLoad: (participants: any[]) => void;
   isRaffling: boolean;
-  onLogoRain: () => void;
+  onLogoRain?: () => void;
   children?: React.ReactNode;
 }
 
@@ -24,10 +24,7 @@ export function Header({ onParticipantsLoad, isRaffling, onLogoRain, children }:
   const router = useRouter();
 
   return (
-    <header className="py-6 px-4 flex justify-between items-start w-full">
-        <h1 className="text-4xl md:text-5xl font-bold tracking-tighter text-primary font-headline">
-          HypnoRaffle
-        </h1>
+    <header className="py-6 px-4 flex justify-end items-start w-full absolute top-0 right-0">
       <div className="flex flex-col items-center gap-2">
         {children}
          <TooltipProvider>
@@ -54,17 +51,20 @@ export function Header({ onParticipantsLoad, isRaffling, onLogoRain, children }:
                     <p>Show QR Code</p>
                 </TooltipContent>
             </Tooltip>
+            
+            {onLogoRain && (
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Button variant="outline" size="icon" onClick={onLogoRain}>
+                            <Sparkles className="h-5 w-5" />
+                        </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="left">
+                        <p>Rain Logos</p>
+                    </TooltipContent>
+                </Tooltip>
+            )}
 
-            <Tooltip>
-                <TooltipTrigger asChild>
-                    <Button variant="outline" size="icon" onClick={onLogoRain}>
-                        <Sparkles className="h-5 w-5" />
-                    </Button>
-                </TooltipTrigger>
-                <TooltipContent side="left">
-                    <p>Rain Logos</p>
-                </TooltipContent>
-            </Tooltip>
         </TooltipProvider>
       </div>
     </header>

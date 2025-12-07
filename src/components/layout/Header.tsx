@@ -4,13 +4,20 @@ import Image from 'next/image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Button } from '../ui/button';
 import { useRouter } from 'next/navigation';
-import { QrCode, Upload } from 'lucide-react';
+import { QrCode, Upload, Sparkles } from 'lucide-react';
 import React from 'react';
 import { ParticipantImporter } from '../raffle/ParticipantImporter';
 
 const logo = PlaceHolderImages.find(img => img.id === 'mcp-logo');
 
-export function Header({ onParticipantsLoad, isRaffling, children }: { onParticipantsLoad: (participants: any[]) => void, isRaffling: boolean, children?: React.ReactNode }) {
+interface HeaderProps {
+  onParticipantsLoad: (participants: any[]) => void;
+  isRaffling: boolean;
+  onLogoRain: () => void;
+  children?: React.ReactNode;
+}
+
+export function Header({ onParticipantsLoad, isRaffling, onLogoRain, children }: HeaderProps) {
   const router = useRouter();
   return (
     <header className="py-6 px-4 flex justify-between items-center w-full">
@@ -28,6 +35,10 @@ export function Header({ onParticipantsLoad, isRaffling, children }: { onPartici
         <Button variant="secondary" onClick={() => router.push('/qr-display')}>
           <QrCode className="mr-2 h-4 w-4" />
           Show QR
+        </Button>
+        <Button variant="outline" size="sm" onClick={onLogoRain}>
+            <Sparkles className="mr-2 h-4 w-4" />
+            Logos
         </Button>
          {logo && (
             <Image

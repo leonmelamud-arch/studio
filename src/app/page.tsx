@@ -7,7 +7,7 @@ import { Header } from '@/components/layout/Header';
 import { SlotMachine } from '@/components/raffle/SlotMachine';
 import { secureRandom } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
-import { Trophy, Sparkles } from 'lucide-react';
+import { Trophy } from 'lucide-react';
 import { useParticipants } from '@/context/ParticipantsContext';
 import { Confetti } from '@/components/raffle/Confetti';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
@@ -82,7 +82,7 @@ export default function Home() {
     <>
       <Confetti isCelebrating={spinHasEnded || isRainingLogos} image={isRainingLogos ? logo?.imageUrl : undefined} />
       <main className="flex flex-col items-center justify-between min-h-screen w-full p-4 md:p-8">
-        <Header onParticipantsLoad={handleParticipantsLoad} isRaffling={isRaffling} />
+        <Header onParticipantsLoad={handleParticipantsLoad} isRaffling={isRaffling} onLogoRain={handleLogoRain} />
         
         <div className="w-full max-w-4xl mx-auto flex-grow flex flex-col items-center justify-center gap-8">
           <SlotMachine 
@@ -108,10 +108,6 @@ export default function Home() {
                 Prepare Next Round
               </Button>
              )}
-             <Button onClick={handleLogoRain} size="lg" variant="outline">
-                <Sparkles className="mr-2 h-5 w-5" />
-                Rain Logos
-             </Button>
           </div>
         </div>
 

@@ -12,13 +12,14 @@ interface SlotMachineProps {
   isSpinning: boolean;
   onSpinEnd: () => void;
   loading: boolean;
+  error: Error | null;
 }
 
 const REPETITIONS = 10;
 const ITEM_HEIGHT_REM = 5; // h-20
 const ITEM_HEIGHT_PX = ITEM_HEIGHT_REM * 16; // 80px
 
-export function SlotMachine({ participants, winner, isSpinning, onSpinEnd, loading }: SlotMachineProps) {
+export function SlotMachine({ participants, winner, isSpinning, onSpinEnd, loading, error }: SlotMachineProps) {
   const [shuffledParticipants, setShuffledParticipants] = useState<Participant[]>([]);
   const [isAnimating, setIsAnimating] = useState(false);
   const listRef = useRef<HTMLUListElement>(null);
@@ -105,7 +106,11 @@ export function SlotMachine({ participants, winner, isSpinning, onSpinEnd, loadi
         onTransitionEnd={handleTransitionEnd}
         className="h-full"
       >
-        {hasParticipants ? (
+        {error ? (
+           <li className="h-full flex items-center justify-center text-destructive text-xl px-4 text-center">
+             Could not connect to the database. Please check console for errors.
+           </li>
+        ) : hasParticipants ? (
           shuffledParticipants.map((p, i) => (
             <li
               key={`${p.id}-${i}`}

@@ -7,18 +7,26 @@ import { Header } from '@/components/layout/Header';
 import { SlotMachine } from '@/components/raffle/SlotMachine';
 import { secureRandom } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
-import { Trophy } from 'lucide-react';
+import { Trophy, ServerCrash } from 'lucide-react';
 import { useParticipants } from '@/context/ParticipantsContext';
 import { Confetti } from '@/components/raffle/Confetti';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import Image from 'next/image';
-import { collection, writeBatch, doc, getDocs, query, where } from 'firebase/firestore';
+import { collection, writeBatch, doc } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 
 const initialLogo = PlaceHolderImages.find(img => img.id === 'mcp-logo');
 
 export default function Home() {
-  const { allParticipants, setAllParticipants, availableParticipants, setAvailableParticipants, loading } = useParticipants();
+  const { 
+    allParticipants, 
+    setAllParticipants, 
+    availableParticipants, 
+    setAvailableParticipants, 
+    loading, 
+    error 
+  } = useParticipants();
+  
   const [winner, setWinner] = useState<Participant | null>(null);
   const [isRaffling, setIsRaffling] = useState(false);
   const [spinHasEnded, setSpinHasEnded] = useState(false);
@@ -29,7 +37,6 @@ export default function Home() {
   const firestore = useFirestore();
 
   const handleParticipantsLoad = async (newParticipants: Participant[]) => {
-    
     if (!firestore) {
       toast({ title: "Database not connected", description: "Please try again later.", variant: "destructive"});
       return;
@@ -37,10 +44,7 @@ export default function Home() {
 
     const participantsCol = collection(firestore, 'participants');
     
-    // We check for existing participants based on displayName to avoid duplicates from CSV
-    const existingSnapshot = await getDocs(participantsCol);
-    const existingDisplayNames = new Set(existingSnapshot.docs.map(doc => doc.data().displayName));
-
+    const existingDisplayNames = new Set(allParticipants.map(p => p.displayName));
     const uniqueNew = newParticipants.filter(p => !existingDisplayNames.has(p.displayName));
 
     if (uniqueNew.length > 0) {
@@ -125,7 +129,17 @@ export default function Home() {
     setSpinHasEnded(false);
     setIsRaffling(false);
     if (winner) {
-      setAvailableParticipants(prev => prev.filter(p => p.id !== winner.id));
+      const remaining = availableParticipants.filter(p => p.id !== winner.id);
+      setAvailableParticipants(remaining);
+      
+      // If that was the last participant, reset available to all for the next major round
+      if (remaining.length === 0 && allParticipants.length > 0) {
+         toast({
+          title: 'Round Complete!',
+          description: 'All participants have been chosen. Resetting for a new round.',
+        });
+        setAvailableParticipants(allParticipants);
+      }
     }
     setWinner(null);
   };
@@ -148,6 +162,12 @@ export default function Home() {
 
   const participantCount = useMemo(() => allParticipants.length, [allParticipants]);
   const availableCount = useMemo(() => availableParticipants.length, [availableParticipants]);
+
+  const getLoadingMessage = () => {
+    if (!firestore) return "Connecting to DB...";
+    if (loading) return "Loading Participants...";
+    return "Start Raffle";
+  }
 
   return (
     <>
@@ -190,18 +210,19 @@ export default function Home() {
             isSpinning={isRaffling} 
             onSpinEnd={handleSpinEnd}
             loading={loading && allParticipants.length === 0}
+            error={error}
           />
           <div className="flex flex-wrap gap-4 items-center justify-center">
              {!isRaffling && !spinHasEnded ? (
                 <Button 
                 onClick={handleStartRaffle} 
-                disabled={isRaffling || loading || availableParticipants.length === 0}
+                disabled={isRaffling || loading || availableParticipants.length === 0 || !!error}
                 size="lg"
                 className="font-bold text-lg"
-                variant="default"
+                variant={error ? "destructive" : "default"}
               >
-                <Trophy className="mr-2 h-5 w-5" />
-                {loading ? 'Loading...' : 'Start Raffle'}
+                {error ? <ServerCrash className="mr-2 h-5 w-5" /> : <Trophy className="mr-2 h-5 w-5" />}
+                {error ? "Connection Failed" : getLoadingMessage()}
               </Button>
              ) : spinHasEnded ? (
               <Button onClick={handleNextRound} size="lg" className="font-bold text-lg">
@@ -209,7 +230,7 @@ export default function Home() {
               </Button>
              ) : null}
             
-            {availableCount === 0 && participantCount > 0 && (
+            {availableCount === 0 && participantCount > 0 && !isRaffling && (
                 <Button onClick={handleResetRaffle} size="lg" variant="secondary">
                     Reset Raffle
                 </Button>

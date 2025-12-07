@@ -1,17 +1,10 @@
 "use client";
 
-import React, { useRef, useState } from 'react';
+import React, { useRef } from 'react';
 import type { Participant } from '@/types';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Button } from '@/components/ui/button';
-import { Upload, QrCode, UserPlus } from 'lucide-react';
+import { Upload } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { QRCodeModal } from './QRCodeModal';
 
 interface ParticipantImporterProps {
   onParticipantsLoad: (participants: Participant[]) => void;
@@ -20,7 +13,6 @@ interface ParticipantImporterProps {
 
 export function ParticipantImporter({ onParticipantsLoad, disabled }: ParticipantImporterProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [isQrModalOpen, setQrModalOpen] = useState(false);
   const { toast } = useToast();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -81,34 +73,12 @@ export function ParticipantImporter({ onParticipantsLoad, disabled }: Participan
     reader.readAsText(file);
   };
   
-  const handleManualAdd = (participant: Omit<Participant, 'id' | 'displayName'>) => {
-    const newParticipant: Participant = {
-        ...participant,
-        id: `${participant.name}-${participant.lastName}-${Math.random()}`,
-        displayName: `${participant.name} ${participant.lastName.charAt(0)}.`,
-    }
-    onParticipantsLoad([newParticipant]);
-  }
-
   return (
     <>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="secondary" disabled={disabled}>
-            <UserPlus className="mr-2 h-4 w-4" /> Add Participants
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent>
-          <DropdownMenuItem onSelect={() => fileInputRef.current?.click()}>
-            <Upload className="mr-2 h-4 w-4" />
-            <span>Upload CSV</span>
-          </DropdownMenuItem>
-          <DropdownMenuItem onSelect={() => setQrModalOpen(true)}>
-            <QrCode className="mr-2 h-4 w-4" />
-            <span>Scan QR (Manual Entry)</span>
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+      <Button variant="secondary" disabled={disabled} onClick={() => fileInputRef.current?.click()}>
+        <Upload className="mr-2 h-4 w-4" />
+        Upload CSV
+      </Button>
       <input
         type="file"
         ref={fileInputRef}
@@ -116,7 +86,6 @@ export function ParticipantImporter({ onParticipantsLoad, disabled }: Participan
         accept=".csv"
         onChange={handleFileChange}
       />
-      <QRCodeModal open={isQrModalOpen} onOpenChange={setQrModalOpen} onAddParticipant={handleManualAdd} />
     </>
   );
 }

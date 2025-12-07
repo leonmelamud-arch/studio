@@ -5,9 +5,14 @@ const logo = PlaceHolderImages.find(img => img.id === 'mcp-logo');
 
 export function Header() {
   return (
-    <header className="py-6 px-4 flex justify-center items-center w-full">
+    <header className="py-6 px-4 flex justify-between items-center w-full">
+      <div className="w-14"></div>
       <div className="flex items-center gap-4 text-center">
-        {logo && (
+        <h1 className="text-4xl md:text-5xl font-bold tracking-tighter text-primary font-headline">
+          HypnoRaffle
+        </h1>
+      </div>
+       {logo && (
           <Image
             src={logo.imageUrl}
             alt={logo.description}
@@ -17,10 +22,6 @@ export function Header() {
             data-ai-hint={logo.imageHint}
           />
         )}
-        <h1 className="text-4xl md:text-5xl font-bold tracking-tighter text-primary font-headline">
-          HypnoRaffle
-        </h1>
-      </div>
     </header>
   );
 }

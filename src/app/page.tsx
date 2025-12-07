@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import type { Participant } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Header } from '@/components/layout/Header';
@@ -9,7 +10,7 @@ import { SlotMachine } from '@/components/raffle/SlotMachine';
 import { WinnerModal } from '@/components/raffle/WinnerModal';
 import { secureRandom } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
-import { Trophy } from 'lucide-react';
+import { Trophy, QrCode } from 'lucide-react';
 
 export default function Home() {
   const [allParticipants, setAllParticipants] = useState<Participant[]>([]);
@@ -18,6 +19,7 @@ export default function Home() {
   const [isRaffling, setIsRaffling] = useState(false);
   const [showWinnerModal, setShowWinnerModal] = useState(false);
   const { toast } = useToast();
+  const router = useRouter();
 
   const handleParticipantsLoad = (newParticipants: Participant[]) => {
     const uniqueNew = newParticipants.filter(np => !allParticipants.some(ap => ap.id === np.id));
@@ -83,8 +85,7 @@ export default function Home() {
             onSpinEnd={handleSpinEnd} 
           />
           <div className="flex flex-wrap gap-4 items-center justify-center">
-            <ParticipantImporter onParticipantsLoad={handleParticipantsLoad} disabled={isRaffling} />
-            <Button 
+             <Button 
               onClick={handleStartRaffle} 
               disabled={isRaffling || availableParticipants.length === 0}
               size="lg"
@@ -101,6 +102,13 @@ export default function Home() {
           <p>Participants: {participantCount} | Available for this round: {availableCount}</p>
         </footer>
       </main>
+      <div className="absolute top-6 right-4 md:right-8 flex items-center gap-4">
+        <ParticipantImporter onParticipantsLoad={handleParticipantsLoad} disabled={isRaffling} />
+        <Button variant="secondary" onClick={() => router.push('/qr')}>
+          <QrCode className="mr-2 h-4 w-4" />
+          Scan QR
+        </Button>
+      </div>
       <WinnerModal 
         open={showWinnerModal}
         onOpenChange={setShowWinnerModal}

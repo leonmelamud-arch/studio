@@ -96,7 +96,7 @@ export function SessionIndicator() {
 
     const getJoinUrl = () => {
         if (typeof window === 'undefined' || !sessionId) return '';
-        return `${window.location.origin}/qr?session=${sessionId}`;
+        return `${window.location.origin}/raffle/qr?session=${sessionId}`;
     };
 
     // Format session ID for display (first 8 characters)

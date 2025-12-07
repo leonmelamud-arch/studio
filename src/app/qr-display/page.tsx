@@ -16,14 +16,14 @@ export default function QRDisplayPage() {
 
     useEffect(() => {
         if (typeof window !== 'undefined') {
-            const currentUrl = window.location.origin + '/qr';
+            const currentUrl = window.location.origin + '/raffle/qr';
             setUrl(currentUrl);
         }
     }, []);
 
     const handleParticipantsLoad = (newParticipants: any[]) => {
         const uniqueNew = newParticipants.filter(np => !allParticipants.some(ap => ap.id === np.id));
-    
+
         if (uniqueNew.length > 0) {
             setAllParticipants(prev => [...prev, ...uniqueNew]);
             setAvailableParticipants(prev => [...prev, ...uniqueNew]);

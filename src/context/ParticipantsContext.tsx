@@ -1,9 +1,9 @@
+
 "use client";
 
-import React, { createContext, useContext, useState, ReactNode, Dispatch, SetStateAction, useEffect, useMemo } from 'react';
+import React, { createContext, useContext, useState, ReactNode, Dispatch, SetStateAction, useEffect } from 'react';
 import type { Participant } from '@/types';
-import { useCollection } from '@/firebase';
-import { collection, query } from 'firebase/firestore';
+import { collection, query, onSnapshot, Unsubscribe } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 
 interface ParticipantsContextType {
@@ -18,27 +18,49 @@ const ParticipantsContext = createContext<ParticipantsContextType | undefined>(u
 
 export function ParticipantsProvider({ children }: { children: ReactNode }) {
   const firestore = useFirestore();
-
-  const participantsQuery = useMemo(() => {
-    if (!firestore) return null;
-    return query(collection(firestore, 'participants'));
-  }, [firestore]);
-
-  const { data: firestoreParticipants, loading } = useCollection<Participant>(participantsQuery);
-
   const [allParticipants, setAllParticipants] = useState<Participant[]>([]);
   const [availableParticipants, setAvailableParticipants] = useState<Participant[]>([]);
-  
+  const [loading, setLoading] = useState(true);
+
   useEffect(() => {
-    if (firestoreParticipants) {
-        const sortedParticipants = [...firestoreParticipants].sort((a, b) => a.displayName.localeCompare(b.displayName));
-        setAllParticipants(sortedParticipants);
-        // Only set available participants if they are empty
-        if (availableParticipants.length === 0) {
-          setAvailableParticipants(sortedParticipants);
-        }
+    if (!firestore) {
+      // Firestore might not be available on first render, wait for it.
+      return;
     }
-  }, [firestoreParticipants]);
+
+    setLoading(true);
+    const participantsQuery = query(collection(firestore, 'participants'));
+
+    const unsubscribe: Unsubscribe = onSnapshot(
+      participantsQuery,
+      (snapshot) => {
+        const firestoreParticipants = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+        } as Participant));
+        
+        const sortedParticipants = [...firestoreParticipants].sort((a, b) => a.displayName.localeCompare(b.displayName));
+        
+        setAllParticipants(prevAll => {
+          // Only update available participants if all participants list was empty before
+          if (prevAll.length === 0) {
+            setAvailableParticipants(sortedParticipants);
+          }
+          return sortedParticipants;
+        });
+
+        setLoading(false);
+      },
+      (error) => {
+        console.error("Error fetching participants:", error);
+        setLoading(false);
+      }
+    );
+
+    // Cleanup subscription on unmount
+    return () => unsubscribe();
+  }, [firestore]);
+
 
   return (
     <ParticipantsContext.Provider value={{ allParticipants, setAllParticipants, availableParticipants, setAvailableParticipants, loading }}>

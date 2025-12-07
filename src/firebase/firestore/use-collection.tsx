@@ -1,12 +1,12 @@
+
 'use client';
 
 import {
   onSnapshot,
   type CollectionReference,
-  type DocumentData,
   type Query,
 } from 'firebase/firestore';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 
@@ -18,8 +18,8 @@ export function useCollection<T extends { id: string }>(
 
   useEffect(() => {
     if (!queryOrRef) {
-        setLoading(false);
         setData(null);
+        setLoading(false);
         return;
     }
     
@@ -46,12 +46,14 @@ export function useCollection<T extends { id: string }>(
             operation: 'list',
         });
         errorEmitter.emit('permission-error', permissionError);
+        setData(null);
         setLoading(false);
       }
     );
 
     return () => unsubscribe();
-  }, [queryOrRef]);
+  // The queryOrRef object's stability should be managed by the calling component (e.g., with useMemo).
+  }, [queryOrRef]); 
 
   return { data, loading };
 }

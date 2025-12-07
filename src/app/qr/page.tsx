@@ -7,6 +7,8 @@ import { useRouter } from 'next/navigation';
 import { collection, addDoc, doc, setDoc } from "firebase/firestore";
 import { useFirestore } from "@/firebase";
 import { secureRandom } from '@/lib/utils';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 
 import { Button } from "@/components/ui/button";
@@ -44,35 +46,39 @@ export default function QRPage() {
       toast({ title: "Database not connected", description: "Please try again later.", variant: "destructive"});
       return;
     }
-    try {
-        const displayName = `${values.name} ${values.lastName}`;
-        // Create a more robust unique ID
-        const id = `${displayName.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}`;
+    
+    const displayName = `${values.name} ${values.lastName}`;
+    const id = `${displayName.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}`;
 
-        const newParticipant = {
-            name: values.name,
-            lastName: values.lastName,
-            displayName: displayName,
-        };
-        
-        const participantRef = doc(firestore, "participants", id);
-        await setDoc(participantRef, newParticipant);
-        
+    const newParticipant = {
+        name: values.name,
+        lastName: values.lastName,
+        displayName: displayName,
+    };
+    
+    const participantRef = doc(firestore, "participants", id);
+
+    setDoc(participantRef, newParticipant)
+      .then(() => {
         toast({
             title: "You're in!",
             description: `Welcome to the raffle, ${displayName}!`,
         });
-        
         form.reset();
-
-    } catch (error) {
-        console.error("Error adding participant: ", error);
+      })
+      .catch((serverError) => {
+        const permissionError = new FirestorePermissionError({
+            path: participantRef.path,
+            operation: 'create',
+            requestResourceData: newParticipant,
+        });
+        errorEmitter.emit('permission-error', permissionError);
         toast({
             title: "Error",
-            description: "Could not add you to the raffle. Please try again.",
+            description: "Could not add you to the raffle. Please check permissions and try again.",
             variant: "destructive",
         });
-    }
+    });
   }
 
   return (

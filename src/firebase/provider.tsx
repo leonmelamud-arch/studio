@@ -9,6 +9,7 @@ import {
   useMemo,
   type PropsWithChildren,
 } from 'react';
+import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
 
 type FirebaseContextValue = {
   app: FirebaseApp;
@@ -26,6 +27,7 @@ export function FirebaseProvider({
 }: PropsWithChildren<{ value: FirebaseContextValue }>) {
   return (
     <FirebaseContext.Provider value={value}>
+      <FirebaseErrorListener />
       {children}
     </FirebaseContext.Provider>
   );

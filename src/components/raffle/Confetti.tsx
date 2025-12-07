@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useEffect, useCallback } from 'react';
+import React, { useRef, useEffect, useCallback, useState } from 'react';
 
 const PARTICLE_COUNT = 150;
 const GRAVITY = 0.5;
@@ -19,11 +19,23 @@ type Particle = {
   opacity: number;
 };
 
-export function Confetti({ isCelebrating }: { isCelebrating: boolean }) {
+export function Confetti({ isCelebrating, image }: { isCelebrating: boolean, image?: string }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationFrameId = useRef<number>();
   const particles = useRef<Particle[]>([]);
+  const [logoImage, setLogoImage] = useState<HTMLImageElement | null>(null);
+
   const themeColors = ['#FFC629', '#FFFFFF', '#333333']; // Bumble yellow, white, dark gray
+
+  useEffect(() => {
+    if (image) {
+      const img = new Image();
+      img.src = image;
+      img.onload = () => setLogoImage(img);
+    } else {
+      setLogoImage(null);
+    }
+  }, [image]);
 
   const resetParticles = useCallback(() => {
     const canvas = canvasRef.current;
@@ -34,8 +46,8 @@ export function Confetti({ isCelebrating }: { isCelebrating: boolean }) {
       particles.current.push({
         x: canvas.width * 0.5,
         y: canvas.height * 0.7,
-        w: Math.random() * 8 + 5,
-        h: Math.random() * 8 + 5,
+        w: image ? Math.random() * 20 + 20 : Math.random() * 8 + 5,
+        h: image ? Math.random() * 20 + 20 : Math.random() * 8 + 5,
         vx: (Math.random() - 0.5) * 25,
         vy: (Math.random() - 0.5) * 25 - 20,
         color: themeColors[Math.floor(Math.random() * themeColors.length)],
@@ -44,7 +56,7 @@ export function Confetti({ isCelebrating }: { isCelebrating: boolean }) {
         opacity: 1,
       });
     }
-  }, [themeColors]);
+  }, [themeColors, image]);
   
   const onResize = useCallback(() => {
     const canvas = canvasRef.current;
@@ -77,8 +89,14 @@ export function Confetti({ isCelebrating }: { isCelebrating: boolean }) {
       ctx.translate(p.x, p.y);
       ctx.rotate(p.angle * Math.PI / 180);
       ctx.globalAlpha = p.opacity;
-      ctx.fillStyle = p.color;
-      ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+
+      if (logoImage) {
+        ctx.drawImage(logoImage, -p.w / 2, -p.h / 2, p.w, p.h);
+      } else {
+        ctx.fillStyle = p.color;
+        ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+      }
+      
       ctx.restore();
     });
 
@@ -87,7 +105,7 @@ export function Confetti({ isCelebrating }: { isCelebrating: boolean }) {
     if (particles.current.length > 0) {
       animationFrameId.current = requestAnimationFrame(animate);
     }
-  }, []);
+  }, [logoImage]);
 
   useEffect(() => {
     onResize();

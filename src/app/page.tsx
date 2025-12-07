@@ -7,15 +7,19 @@ import { Header } from '@/components/layout/Header';
 import { SlotMachine } from '@/components/raffle/SlotMachine';
 import { secureRandom } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
-import { Trophy } from 'lucide-react';
+import { Trophy, Sparkles } from 'lucide-react';
 import { useParticipants } from '@/context/ParticipantsContext';
 import { Confetti } from '@/components/raffle/Confetti';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
+
+const logo = PlaceHolderImages.find(img => img.id === 'mcp-logo');
 
 export default function Home() {
   const { allParticipants, setAllParticipants, availableParticipants, setAvailableParticipants } = useParticipants();
   const [winner, setWinner] = useState<Participant | null>(null);
   const [isRaffling, setIsRaffling] = useState(false);
   const [spinHasEnded, setSpinHasEnded] = useState(false);
+  const [isRainingLogos, setIsRainingLogos] = useState(false);
   const { toast } = useToast();
 
   const handleParticipantsLoad = (newParticipants: Participant[]) => {
@@ -65,13 +69,18 @@ export default function Home() {
     }
     setWinner(null);
   };
+  
+  const handleLogoRain = () => {
+    setIsRainingLogos(true);
+    setTimeout(() => setIsRainingLogos(false), 5000); // Stop the rain after 5 seconds
+  };
 
   const participantCount = useMemo(() => allParticipants.length, [allParticipants]);
   const availableCount = useMemo(() => availableParticipants.length, [availableParticipants]);
 
   return (
     <>
-      <Confetti isCelebrating={spinHasEnded} />
+      <Confetti isCelebrating={spinHasEnded || isRainingLogos} image={isRainingLogos ? logo?.imageUrl : undefined} />
       <main className="flex flex-col items-center justify-between min-h-screen w-full p-4 md:p-8">
         <Header onParticipantsLoad={handleParticipantsLoad} isRaffling={isRaffling} />
         
@@ -99,6 +108,10 @@ export default function Home() {
                 Prepare Next Round
               </Button>
              )}
+             <Button onClick={handleLogoRain} size="lg" variant="outline">
+                <Sparkles className="mr-2 h-5 w-5" />
+                Rain Logos
+             </Button>
           </div>
         </div>
 

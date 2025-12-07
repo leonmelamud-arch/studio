@@ -22,19 +22,43 @@ export function ParticipantImporter({ onParticipantsLoad, disabled, children }: 
     reader.onload = (event) => {
       try {
         const text = event.target?.result as string;
-        const lines = text.split(/\r?\n/).slice(1); // Skip header, handle both LF and CRLF
+        const lines = text.split(/\r?\n/);
+        if (lines.length < 2) {
+            toast({
+                title: "Import Failed",
+                description: "CSV file is empty or missing headers.",
+                variant: "destructive"
+            });
+            return;
+        }
+        
+        const header = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+        const firstNameIndex = header.indexOf('first_name');
+        const lastNameIndex = header.indexOf('name');
+
+        if (firstNameIndex === -1 || lastNameIndex === -1) {
+            toast({
+                title: "Import Failed",
+                description: "CSV must contain 'first_name' and 'name' columns.",
+                variant: "destructive"
+            });
+            return;
+        }
 
         const newParticipants: Participant[] = lines
+          .slice(1)
           .map((line, index) => {
             if (!line.trim()) return null;
-            // Expecting CSV format: name,lastName
-            const [name, lastName] = line.split(',').map(s => s.trim().replace(/"/g, ''));
-            if (name && lastName) {
+            const data = line.split(',').map(s => s.trim().replace(/"/g, ''));
+            const firstName = data[firstNameIndex];
+            const lastName = data[lastNameIndex];
+            
+            if (firstName && lastName) {
               return {
-                id: `${name}-${lastName}-${index}`, // More stable ID for same file
-                name,
-                lastName,
-                displayName: `${name} ${lastName.charAt(0)}.`,
+                id: `${firstName}-${lastName}-${index}`,
+                name: firstName,
+                lastName: lastName,
+                displayName: `${firstName} ${lastName.charAt(0)}.`,
               };
             }
             return null;
@@ -46,7 +70,7 @@ export function ParticipantImporter({ onParticipantsLoad, disabled, children }: 
         } else {
           toast({
             title: "Import Failed",
-            description: "No valid participants found in the CSV file. The file should have 'name' and 'lastName' columns.",
+            description: "No valid participants found in the CSV file.",
             variant: "destructive"
           });
         }
@@ -57,7 +81,6 @@ export function ParticipantImporter({ onParticipantsLoad, disabled, children }: 
           variant: "destructive"
         });
       } finally {
-        // Reset file input to allow re-uploading the same file
         if (fileInputRef.current) {
           fileInputRef.current.value = "";
         }

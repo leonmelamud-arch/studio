@@ -27,8 +27,9 @@ export function ParticipantImporter({ onParticipantsLoad, disabled, children }: 
         const newParticipants: Participant[] = lines
           .map((line, index) => {
             if (!line.trim()) return null;
-            const [name, lastName, status] = line.split(',').map(s => s.trim().replace(/"/g, ''));
-            if (status && status.toLowerCase() === 'approved' && name && lastName) {
+            // Expecting CSV format: name,lastName
+            const [name, lastName] = line.split(',').map(s => s.trim().replace(/"/g, ''));
+            if (name && lastName) {
               return {
                 id: `${name}-${lastName}-${index}`, // More stable ID for same file
                 name,
@@ -45,7 +46,7 @@ export function ParticipantImporter({ onParticipantsLoad, disabled, children }: 
         } else {
           toast({
             title: "Import Failed",
-            description: "No 'approved' participants found in the CSV file. Check file format.",
+            description: "No valid participants found in the CSV file. The file should have 'name' and 'lastName' columns.",
             variant: "destructive"
           });
         }

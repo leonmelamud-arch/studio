@@ -24,7 +24,10 @@ export function Header({ onParticipantsLoad, isRaffling, onLogoRain, children }:
   const router = useRouter();
 
   return (
-    <header className="py-6 px-4 flex justify-end items-start w-full absolute top-0 right-0">
+    <header className="py-6 px-4 flex justify-between items-start w-full absolute top-0 left-0 right-0">
+       <div>
+         {/* Intentionally left blank to push other items to the right */}
+       </div>
       <div className="flex flex-col items-center gap-2">
         {children}
          <TooltipProvider>

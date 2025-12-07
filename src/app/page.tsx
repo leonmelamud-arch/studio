@@ -5,17 +5,17 @@ import type { Participant } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Header } from '@/components/layout/Header';
 import { SlotMachine } from '@/components/raffle/SlotMachine';
-import { WinnerModal } from '@/components/raffle/WinnerModal';
 import { secureRandom } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { Trophy } from 'lucide-react';
 import { useParticipants } from '@/context/ParticipantsContext';
+import { Confetti } from '@/components/raffle/Confetti';
 
 export default function Home() {
   const { allParticipants, setAllParticipants, availableParticipants, setAvailableParticipants } = useParticipants();
   const [winner, setWinner] = useState<Participant | null>(null);
   const [isRaffling, setIsRaffling] = useState(false);
-  const [showWinnerModal, setShowWinnerModal] = useState(false);
+  const [spinHasEnded, setSpinHasEnded] = useState(false);
   const { toast } = useToast();
 
   const handleParticipantsLoad = (newParticipants: Participant[]) => {
@@ -46,6 +46,7 @@ export default function Home() {
       });
       return;
     }
+    setSpinHasEnded(false);
     setIsRaffling(true);
     const winnerIndex = secureRandom(availableParticipants.length);
     const pickedWinner = availableParticipants[winnerIndex];
@@ -53,17 +54,16 @@ export default function Home() {
   };
 
   const handleSpinEnd = () => {
-    setShowWinnerModal(true);
+    setSpinHasEnded(true);
   };
   
   const handleNextRound = () => {
-    setShowWinnerModal(false);
+    setSpinHasEnded(false);
     setIsRaffling(false);
     if (winner) {
       setAvailableParticipants(prev => prev.filter(p => p.id !== winner.id));
     }
-    // Delay setting winner to null to avoid modal content disappearing during closing animation
-    setTimeout(() => setWinner(null), 300);
+    setWinner(null);
   };
 
   const participantCount = useMemo(() => allParticipants.length, [allParticipants]);
@@ -71,6 +71,7 @@ export default function Home() {
 
   return (
     <>
+      <Confetti isCelebrating={spinHasEnded} />
       <main className="flex flex-col items-center justify-between min-h-screen w-full p-4 md:p-8">
         <Header onParticipantsLoad={handleParticipantsLoad} isRaffling={isRaffling} />
         
@@ -82,16 +83,22 @@ export default function Home() {
             onSpinEnd={handleSpinEnd} 
           />
           <div className="flex flex-wrap gap-4 items-center justify-center">
-             <Button 
-              onClick={handleStartRaffle} 
-              disabled={isRaffling || availableParticipants.length === 0}
-              size="lg"
-              className="font-bold text-lg"
-              variant="default"
-            >
-              <Trophy className="mr-2 h-5 w-5" />
-              Start Raffle
-            </Button>
+             {!spinHasEnded ? (
+                <Button 
+                onClick={handleStartRaffle} 
+                disabled={isRaffling || availableParticipants.length === 0}
+                size="lg"
+                className="font-bold text-lg"
+                variant="default"
+              >
+                <Trophy className="mr-2 h-5 w-5" />
+                Start Raffle
+              </Button>
+             ) : (
+              <Button onClick={handleNextRound} size="lg" className="font-bold text-lg">
+                Prepare Next Round
+              </Button>
+             )}
           </div>
         </div>
 
@@ -99,13 +106,6 @@ export default function Home() {
           <p>Participants: {participantCount} | Available for this round: {availableCount}</p>
         </footer>
       </main>
-      
-      <WinnerModal 
-        open={showWinnerModal}
-        onOpenChange={setShowWinnerModal}
-        winner={winner}
-        onNextRound={handleNextRound}
-      />
     </>
   );
 }

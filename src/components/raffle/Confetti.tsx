@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useRef, useEffect, useCallback, useState } from 'react';
+import React, { useRef, useEffect } from 'react';
 
 const PARTICLE_COUNT = 150;
-const GRAVITY = 0.5;
-const TERMINAL_VELOCITY = 5;
+const GRAVITY = 0.05;
+const TERMINAL_VELOCITY = 1;
 
 type Particle = {
   x: number;
@@ -19,95 +19,96 @@ type Particle = {
   opacity: number;
 };
 
+const themeColors = ['#FFC629', '#FFFFFF', '#333333']; // Bumble yellow, white, dark gray
+
 export function Confetti({ isCelebrating, image }: { isCelebrating: boolean, image?: string }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationFrameId = useRef<number>();
   const particles = useRef<Particle[]>([]);
-  const [logoImage, setLogoImage] = useState<HTMLImageElement | null>(null);
+  const logoImageRef = useRef<HTMLImageElement | null>(null);
+  const imageRef = useRef<string | undefined>(image);
 
-  const themeColors = ['#FFC629', '#FFFFFF', '#333333']; // Bumble yellow, white, dark gray
-
+  // Keep image ref updated
   useEffect(() => {
+    imageRef.current = image;
     if (image) {
       const img = new Image();
       img.src = image;
-      img.onload = () => setLogoImage(img);
+      img.onload = () => {
+        logoImageRef.current = img;
+      };
     } else {
-      setLogoImage(null);
+      logoImageRef.current = null;
     }
   }, [image]);
 
-  const resetParticles = useCallback(() => {
+  useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    
-    particles.current = [];
-    for (let i = 0; i < PARTICLE_COUNT; i++) {
-      particles.current.push({
-        x: canvas.width * 0.5,
-        y: canvas.height * 0.7,
-        w: image ? Math.random() * 20 + 20 : Math.random() * 8 + 5,
-        h: image ? Math.random() * 20 + 20 : Math.random() * 8 + 5,
-        vx: (Math.random() - 0.5) * 25,
-        vy: (Math.random() - 0.5) * 25 - 20,
-        color: themeColors[Math.floor(Math.random() * themeColors.length)],
-        angle: Math.random() * 360,
-        dAngle: (Math.random() - 0.5) * 10,
-        opacity: 1,
-      });
-    }
-  }, [themeColors, image]);
-  
-  const onResize = useCallback(() => {
-    const canvas = canvasRef.current;
-    if (canvas) {
+
+    const onResize = () => {
       const { width, height } = canvas.getBoundingClientRect();
       canvas.width = width;
       canvas.height = height;
-    }
-  }, []);
+    };
 
-  const animate = useCallback(() => {
-    const canvas = canvasRef.current;
-    const ctx = canvas?.getContext('2d');
-    if (!canvas || !ctx) return;
-
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    particles.current.forEach(p => {
-      p.vy += GRAVITY;
-      if (p.vy > TERMINAL_VELOCITY) {
-        p.vy = TERMINAL_VELOCITY;
+    const resetParticles = () => {
+      particles.current = [];
+      for (let i = 0; i < PARTICLE_COUNT; i++) {
+        particles.current.push({
+          x: canvas.width * 0.5,
+          y: canvas.height * 0.7,
+          w: imageRef.current ? Math.random() * 40 + 50 : Math.random() * 8 + 5,
+          h: imageRef.current ? Math.random() * 40 + 50 : Math.random() * 8 + 5,
+          vx: (Math.random() - 0.5) * 25,
+          vy: (Math.random() - 0.5) * 25 - 20,
+          color: themeColors[Math.floor(Math.random() * themeColors.length)],
+          angle: Math.random() * 360,
+          dAngle: (Math.random() - 0.5) * 10,
+          opacity: 1,
+        });
       }
-      p.vx *= 0.98;
-      p.x += p.vx;
-      p.y += p.vy;
-      p.angle += p.dAngle;
-      p.opacity = Math.max(0, p.opacity - 0.005);
-      
-      ctx.save();
-      ctx.translate(p.x, p.y);
-      ctx.rotate(p.angle * Math.PI / 180);
-      ctx.globalAlpha = p.opacity;
+    };
 
-      if (logoImage) {
-        ctx.drawImage(logoImage, -p.w / 2, -p.h / 2, p.w, p.h);
-      } else {
-        ctx.fillStyle = p.color;
-        ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+    const animate = () => {
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      particles.current.forEach(p => {
+        p.vy += GRAVITY;
+        if (p.vy > TERMINAL_VELOCITY) {
+          p.vy = TERMINAL_VELOCITY;
+        }
+        p.vx *= 0.98;
+        p.x += p.vx;
+        p.y += p.vy;
+        p.angle += p.dAngle;
+        p.opacity = Math.max(0, p.opacity - 0.0003);
+        
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.angle * Math.PI / 180);
+        ctx.globalAlpha = p.opacity;
+
+        if (logoImageRef.current) {
+          ctx.drawImage(logoImageRef.current, -p.w / 2, -p.h / 2, p.w, p.h);
+        } else {
+          ctx.fillStyle = p.color;
+          ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+        }
+        
+        ctx.restore();
+      });
+
+      particles.current = particles.current.filter(p => p.y < canvas.height && p.opacity > 0);
+
+      if (particles.current.length > 0) {
+        animationFrameId.current = requestAnimationFrame(animate);
       }
-      
-      ctx.restore();
-    });
+    };
 
-    particles.current = particles.current.filter(p => p.y < canvas.height && p.opacity > 0);
-
-    if (particles.current.length > 0) {
-      animationFrameId.current = requestAnimationFrame(animate);
-    }
-  }, [logoImage]);
-
-  useEffect(() => {
     onResize();
     window.addEventListener('resize', onResize);
     
@@ -117,7 +118,15 @@ export function Confetti({ isCelebrating, image }: { isCelebrating: boolean, ima
         animationFrameId.current = requestAnimationFrame(animate);
       }
     } else {
-        particles.current = [];
+      particles.current = [];
+      if (animationFrameId.current) {
+        cancelAnimationFrame(animationFrameId.current);
+      }
+      // Clear the canvas when stopping
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+      }
     }
     
     return () => {
@@ -126,7 +135,7 @@ export function Confetti({ isCelebrating, image }: { isCelebrating: boolean, ima
         cancelAnimationFrame(animationFrameId.current);
       }
     };
-  }, [isCelebrating, animate, resetParticles, onResize]);
+  }, [isCelebrating]);
 
   return (
     <canvas 

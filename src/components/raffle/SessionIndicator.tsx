@@ -105,7 +105,7 @@ export function SessionIndicator() {
     return (
         <>
             {/* Session Indicator Badge */}
-            <div className="fixed left-4 top-20 z-40 flex items-center gap-2 bg-background/80 backdrop-blur-sm border border-border/50 rounded-lg px-3 py-2 shadow-lg">
+            <div className="fixed left-4 top-4 z-40 flex items-center gap-2 bg-background/80 backdrop-blur-sm border border-border/50 rounded-lg px-3 py-2 shadow-lg">
                 <div className="flex flex-col">
                     <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">
                         Session

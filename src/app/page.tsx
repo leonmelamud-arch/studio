@@ -136,8 +136,32 @@ export default function Home() {
     setWinner(pickedWinner);
   };
 
-  const handleSpinEnd = () => {
+  const handleSpinEnd = async () => {
     setSpinHasEnded(true);
+
+    if (winner) {
+      const webhookUrl = process.env.NEXT_PUBLIC_WINNER_WEBHOOK_URL;
+      if (webhookUrl) {
+        try {
+          await fetch(webhookUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              name: winner.name,
+              last_name: winner.last_name,
+              email: winner.email
+            })
+          });
+        } catch (err) {
+          console.error('Webhook failed:', err);
+          toast({
+            title: 'Webhook Error',
+            description: 'Failed to send winner notification.',
+            variant: 'destructive'
+          });
+        }
+      }
+    }
   };
 
   const handleNextRound = () => {
@@ -160,8 +184,12 @@ export default function Home() {
   };
 
   const handleLogoRain = () => {
-    setIsRainingLogos(true);
-    setTimeout(() => setIsRainingLogos(false), 5000); // Stop the rain after 5 seconds
+    if (isRainingLogos) {
+      setIsRainingLogos(false);
+    } else {
+      setIsRainingLogos(true);
+      setTimeout(() => setIsRainingLogos(false), 20000); // Stop the rain after 20 seconds
+    }
   };
 
   const handleResetRaffle = () => {
@@ -185,10 +213,10 @@ export default function Home() {
 
   return (
     <>
-      <Confetti isCelebrating={spinHasEnded || isRainingLogos} image={isRainingLogos ? logoUrl : undefined} />
+      <Confetti isCelebrating={spinHasEnded || isRainingLogos} image={logoUrl} />
       <SessionIndicator />
       <ParticipantsList />
-      <main className="flex flex-col items-center justify-start min-h-screen w-full p-4 md:p-8 pt-24 md:pt-32 relative">
+      <main className="flex flex-col items-center justify-start min-h-screen w-full p-4 md:p-8 pt-20 md:pt-24 relative">
         <Header
           onParticipantsLoad={handleParticipantsLoad}
           isRaffling={isRaffling}

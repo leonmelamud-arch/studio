@@ -68,6 +68,9 @@ This acts as a verification step to ensure all static pages can be generated suc
 This project is configured for **GitHub Pages** deployment via GitHub Actions.
 
 1.  **Push to `main`**: Any push to the `main` branch triggers the deployment workflow.
-2.  **Secrets**: The GitHub Repository Environment `github-pages` must have the following secrets/variables configured:
-    - **Variables**: `NEXT_PUBLIC_SUPABASE_URL`
-    - **Secrets**: `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+2.  **Secrets**: The GitHub Repository Environment `github-pages` must have the following secrets configured under **Settings → Secrets and variables → Actions**:
+    - `NEXT_PUBLIC_SUPABASE_URL` - Your Supabase project URL
+    - `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Your Supabase anonymous key
+    - `NEXT_PUBLIC_WINNER_WEBHOOK_URL` - Webhook URL to receive winner notifications (optional)
+
+The workflow automatically builds the Next.js app as a static export and deploys it to GitHub Pages.
